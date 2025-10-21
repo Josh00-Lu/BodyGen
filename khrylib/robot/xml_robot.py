@@ -666,33 +666,23 @@ class Robot:
         return distances
     
     def get_laplacian_position_encoding(self, pos_enc_dim=4):
+        '''
+        This part is unused in our paper, which will be organized and removed later.
+        '''
         adjacency_matrix = self.build_adjacency_matrix()  # N * N
         num_nodes = adjacency_matrix.shape[0]
         degree_matrix = np.diag(adjacency_matrix.sum(axis=1))  # D, degree matrix
-        
-        # 计算归一化的拉普拉斯矩阵 L_sym = I - D^-1/2 * A * D^-1/2
         D_inv_sqrt = fractional_matrix_power(degree_matrix, -0.5)
-        I = np.eye(num_nodes)  # 单位矩阵
+        I = np.eye(num_nodes)
         L_sym = I - np.dot(np.dot(D_inv_sqrt, adjacency_matrix), D_inv_sqrt)
-        
-        # 使用稀疏矩阵求解器计算归一化拉普拉斯矩阵的特征值和特征向量
-        # 确保k不超过图的节点数，减去1是因为最小的特征值对应的特征向量通常不使用
         k = min(pos_enc_dim, num_nodes - 1)
         vals, vecs = eigsh(L_sym, k=k+1, which='SM')
-        
-        # 忽略第一个特征向量（对应于最小的特征值）
         position_encoding = vecs[:, 1:k+1] # N, k
-        
-        # 随机生成一个由-1和1组成的数组，其形状与position_encoding的行数相同
         flip_signs = np.random.choice([-1, 1], size=(position_encoding.shape[0], 1))
-        # 将flip_signs数组应用于position_encoding的每一行
         position_encoding *= flip_signs
-        
-        # 如果节点个数小于k，使用补零策略
         if k < pos_enc_dim:
             padding = np.zeros((num_nodes, pos_enc_dim - k))
             position_encoding = np.hstack([position_encoding, padding])
-        
         return position_encoding
 
 if __name__ == "__main__":
